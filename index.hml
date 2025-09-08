@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Galeri: Sudut Buku Terkini - Pusat Sumber</title>
+  <style>
+    :root{--gap:12px;--bg:#fafafa;--card:#fff;--muted:#666}
+    *{box-sizing:border-box}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans',Helvetica,Arial; margin:0; background:var(--bg); color:#111}
+    .container{max-width:1100px; margin:28px auto; padding:16px}
+    h1{font-size:1.25rem; margin:0 0 12px}
+    p.lead{margin:0 0 18px; color:var(--muted)}
+
+    /* grid */
+    .gallery{display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:var(--gap)}
+    .card{background:var(--card); border-radius:10px; overflow:hidden; box-shadow:0 1px 6px rgba(0,0,0,0.06); cursor:pointer; display:flex; flex-direction:column}
+    .thumb{width:100%; display:block; aspect-ratio:4/5; object-fit:cover}
+    .meta{padding:10px 12px; font-size:0.95rem}
+    .title{font-weight:600; margin:0 0 6px; font-size:0.95rem}
+    .author{margin:0; color:var(--muted); font-size:0.85rem}
+
+    /* lightbox */
+    .lightbox{position:fixed; inset:0; background:rgba(0,0,0,0.85); display:none; align-items:center; justify-content:center; z-index:1200}
+    .lightbox.open{display:flex}
+    .lightbox-inner{max-width:92vw; max-height:92vh; position:relative}
+    .lb-img{max-width:100%; max-height:80vh; display:block; border-radius:6px}
+    .caption{color:#fff; margin-top:8px; text-align:center}
+    .close, .arrow{position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.08); border:0; color:#fff; padding:10px; border-radius:6px; cursor:pointer}
+    .close{right:8px; top:8px; transform:none}
+    .arrow.left{left:8px}
+    .arrow.right{right:8px}
+    .controls{position:absolute; top:8px; left:12px; color:#fff; font-size:0.9rem}
+
+    /* responsive tweaks */
+    @media (max-width:480px){ .meta{padding:8px} .title{font-size:0.9rem}}
+
+    /* accessibility focus */
+    button:focus{outline:3px solid rgba(255,255,255,0.14)}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Sudut Buku Terkini</h1>
+    <p class="lead">Galeri menunjukkan tajuk-tajuk buku terkini di pusat sumber. Klik gambar untuk lihat lebih besar dan butiran.</p>
+
+    <div class="gallery" id="gallery">
+      <!-- Contoh kad: gantikan src="images/.." dengan laluan gambar sebenar -->
+
+      <article class="card" tabindex="0" data-full="images/buku1-large.jpg" data-caption="Judul Buku A — Penulis X">
+        <img class="thumb" src="images/buku1-thumb.jpg" alt="Judul Buku A" loading="lazy">
+        <div class="meta">
+          <p class="title">Judul Buku A</p>
+          <p class="author">Penulis X · 2025</p>
+        </div>
+      </article>
+
+      <article class="card" tabindex="0" data-full="images/buku2-large.jpg" data-caption="Judul Buku B — Penulis Y">
+        <img class="thumb" src="images/buku2-thumb.jpg" alt="Judul Buku B" loading="lazy">
+        <div class="meta">
+          <p class="title">Judul Buku B</p>
+          <p class="author">Penulis Y · 2024</p>
+        </div>
+      </article>
+
+      <article class="card" tabindex="0" data-full="images/buku3-large.jpg" data-caption="Judul Buku C — Penulis Z">
+        <img class="thumb" src="images/buku3-thumb.jpg" alt="Judul Buku C" loading="lazy">
+        <div class="meta">
+          <p class="title">Judul Buku C</p>
+          <p class="author">Penulis Z · 2025</p>
+        </div>
+      </article>
+
+      <!-- Tambah lagi kad mengikut keperluan -->
+
+    </div>
+  </div>
+
+  <!-- LIGHTBOX -->
+  <div class="lightbox" id="lightbox" role="dialog" aria-hidden="true" aria-label="Pandangan imej besar">
+    <div class="lightbox-inner">
+      <button class="close" id="lbClose" aria-label="Tutup">✕</button>
+      <button class="arrow left" id="lbPrev" aria-label="Imej sebelumnya">◀</button>
+      <button class="arrow right" id="lbNext" aria-label="Imej seterusnya">▶</button>
+      <div class="controls" id="lbCounter"></div>
+      <img src="" alt="" class="lb-img" id="lbImg">
+      <div class="caption" id="lbCaption"></div>
+    </div>
+  </div>
+
+  <script>
+    // Simple accessible lightbox for the gallery
+    const gallery = Array.from(document.querySelectorAll('.gallery .card'));
+    const lb = document.getElementById('lightbox');
+    const lbImg = document.getElementById('lbImg');
+    const lbCaption = document.getElementById('lbCaption');
+    const lbClose = document.getElementById('lbClose');
+    const lbPrev = document.getElementById('lbPrev');
+    const lbNext = document.getElementById('lbNext');
+    const lbCounter = document.getElementById('lbCounter');
+
+    let currentIndex = -1;
+
+    function openLightbox(index){
+      const item = gallery[index];
+      if(!item) return;
+      const full = item.dataset.full || item.querySelector('img').src;
+      const caption = item.dataset.caption || item.querySelector('.title').textContent;
+      lbImg.src = full;
+      lbImg.alt = item.querySelector('img').alt || '';
+      lbCaption.textContent = caption;
+      lb.classList.add('open');
+      lb.setAttribute('aria-hidden','false');
+      currentIndex = index;
+      lbCounter.textContent = `${index+1} / ${gallery.length}`;
+      // trap focus to close button for simple accessibility
+      lbClose.focus();
+    }
+
+    function closeLightbox(){
+      lb.classList.remove('open');
+      lb.setAttribute('aria-hidden','true');
+      lbImg.src = '';
+      currentIndex = -1;
+    }
+
+    function showNext(){ openLightbox((currentIndex + 1) % gallery.length); }
+    function showPrev(){ openLightbox((currentIndex - 1 + gallery.length) % gallery.length); }
+
+    gallery.forEach((card, idx)=>{
+      card.addEventListener('click', ()=> openLightbox(idx));
+      card.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openLightbox(idx); } });
+    });
+
+    lbClose.addEventListener('click', closeLightbox);
+    lbNext.addEventListener('click', showNext);
+    lbPrev.addEventListener('click', showPrev);
+
+    document.addEventListener('keydown', (e)=>{
+      if(lb.classList.contains('open')){
+        if(e.key === 'Escape') closeLightbox();
+        if(e.key === 'ArrowRight') showNext();
+        if(e.key === 'ArrowLeft') showPrev();
+      }
+    });
+
+    // close when clicking outside image
+    lb.addEventListener('click', (e)=>{ if(e.target === lb) closeLightbox(); });
+
+    // Utility: progressive enhancement note
+    // To populate gallery dynamically from a JSON or server, replace the static cards
+    // with JS that fetches the data and creates `article.card` nodes with data-full and img src.
+  </script>
+</body>
+</html>
+<
